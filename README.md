@@ -10,4 +10,10 @@ this is a lightweight wordle game, it fits in under 3kb! its so cool
 - css
 - js
 
+## building
+```shell
+npm install
+node build.mjs
+```
+
 made with love by will

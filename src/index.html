@@ -1,40 +1,30 @@
-<head>
-  <title>uri wordle</title>
-  <style>
-    body {font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: rgb(255, 255, 255); color: #000; touch-action: manipulation;}
-    #b {display: grid; grid-template-columns: repeat(5, 45px); grid-gap: 5px; margin-bottom: 20px;}
-    .t {width: 45px; height: 45px; border: 2px solid #3a3a3c; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; text-transform: uppercase;}
+<body>
+<style>
+    body {font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; touch-action: manipulation;}
+    #b {display: grid; grid-template-columns: repeat(5, 45px); gap: 5px; margin-bottom: 20px;}
+    .t {width: 45px; height: 45px; border: 2px solid #3a3a3c; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold;}
     .k {display: flex; flex-direction: column; gap: 6px; align-items: center; width: 100%; max-width: 400px;}
     .r {display: flex; gap: 4px; width: 100%; justify-content: center;}
-    button {background: #818384; color: #fff; border: 0; padding: 0; height: 45px; flex: 1; border-radius: 4px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 14px;}
+    button {background: #818384; color: #fff; border: 0; padding: 0; height: 45px; flex: 1; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px;}
     button.w {flex: 1.5;}
-    .c {background: #538d4e !important;}
-    .p {background: #b59f3b !important;}
-    .a {background-color: #3a3a3c !important;}
-    canvas {position: absolute; top: 0; left: 0; pointer-events: none; width: 100%; height: 100px;}
+    .c {background: #538d4e;}
+    .p {background: #b59f3b;}
+    .a {background: #3a3a3c;}
+    canvas {position: fixed; inset: 0; pointer-events: none;}
   </style>
-</head>
-<body>
   <h1 style="margin: 0 0 10px 0;">uri wordle</h1>
   <div id="b"></div>
   <div class="k" id="k"></div>
-  <p>made by will</p>
   <canvas id="v"></canvas>
   <script>
-    const words = ["REACT", "UNDER", "APPLE", "BEACH", "CLOCK", "DRIVE", "FLAME", "GUIDE", "HOUSE", "INDEX", "JUICE", "LIGHT", "MOUSE", "PLANT", "SMILE", "TRAIN", "WATER"];
+    const words = ["REACT", "MOUSE", "PLANT", "SMILE", "TRAIN", "WATER"];
     const target = words[Math.floor(Math.random()*words.length)];
 
-    let row = 0, col = 0, r = 6, c = 5;
-    let board = Array(r).fill().map(() => Array(c).fill(''));
+    let row = 0, col = 0, r = 6, c = 5, guess = '';
     const bDiv = document.getElementById('b');
     const kDiv = document.getElementById('k');
 
-    for(let i=0; i<r*c; i++) {
-      let t = document.createElement('div');
-      t.className = 't';
-      t.id = 't-' + i;
-      bDiv.appendChild(t);
-    }
+    bDiv.innerHTML = '<div class=t></div>'.repeat(r*c);
 
     const keys = ["QWERTYUIOP", "ASDFGHJKL", "⌫ZXCVBNM↵"];
     keys.forEach((layer, rIdx) => {
@@ -54,92 +44,57 @@
 
     function handleInput(key) {
       if ((key === 'Backspace' || key === '⌫') && col > 0) {
-        board[row][--col] = '';
+        guess = guess.slice(0, -1);
+        bDiv.children[row*c+--col].textContent = '';
       } else if((key === 'Enter' || key === '↵') && col === c) {
-        let guess = board[row].join('');
-        let remainingTarget = [...target];
-
         for(let i=0; i<c; i++) {
-          let t = document.getElementById(`t-${row*c+i}`);
-          if(guess[i] === target[i]) {
-            t.classList.add('c');
-            remainingTarget[i] = null;
-          }
-        }
-
-        for(let i=0; i<c; i++) {
-          let t = document.getElementById(`t-${row*c+i}`);
-          if(guess[i] !== target[i]) {
-            let idx = remainingTarget.indexOf(guess[i]);
-            if(idx > -1) {
-              t.classList.add('p');
-              remainingTarget[idx] = null;
-            } else {
-              t.classList.add('a');
-            }
-          }
+          let t = bDiv.children[row*c+i];
+          t.classList.add(guess[i] === target[i] ? 'c' : target.includes(guess[i]) ? 'p' : 'a');
           updateKeyColor(guess[i], t.className);
         }
         row++; col = 0;
         if(guess === target) return win();
-        if(row === r) return setTimeout(() => alert('game over twin; the word was' + target), 50);
+        guess = '';
+        if(row === r) return setTimeout(() => alert('game over twin; the word was ' + target), 50);
       } else if (/^[a-zA-Z]$/.test(key) && col < c) {
-        board[row][col++] = key.toUpperCase();
+        let letter = key.toUpperCase();
+        bDiv.children[row*c+col++].textContent = letter;
+        guess += letter;
       }
-      updateVisuals();
-    }
-
-    function updateVisuals() {
-      for(let i=0; i<r; i++)
-        for(let j=0; j<c; j++)
-          document.getElementById(`t-${i*c+j}`).textContent = board[i][j];
     }
 
     function updateKeyColor(letter, tileClass) {
-      Array.from(document.getElementsByTagName('button')).forEach(b => {
-        if(b.textContent === letter) {
-          if(tileClass.includes('c')) b.className = 'c';
-          else if(tileClass.includes('p') && b.className !== 'c') b.className = 'p';
-          else if(tileClass.includes('a') && b.className !== 'c' && b.className !== 'p') b.className = 'a';
-        }
-      });
+      let color = tileClass.slice(-1), b = [...kDiv.getElementsByTagName('button')].find(b => b.textContent === letter);
+      if(color === 'c' || b.className !== 'c' && (color === 'p' || b.className !== 'p')) b.className = color;
     }
 
     function win() {
       let a = new (window.AudioContext || window.webkitAudioContext)();
-      [261.6, 329.6, 392.0, 523.3].forEach((f, i) => {
-        setTimeout(() => {
-          let o = a.createOscillator(), g = a.createGain();
-          o.connect(g); g.connect(a.destination); o.frequency.value = f;
-          g.gain.setValueAtTime(0.1, a.currentTime);
-          g.gain.exponentialRampToValueAtTime(0.01, a.currentTime + 0.4);
-          o.start(); o.stop(a.currentTime + 0.4);
-        }, i * 120);
-      });
+      [261.6, 329.6, 392.0, 523.3].forEach((f, i) => setTimeout(() => {
+        let o = a.createOscillator(), g = a.createGain();
+        o.connect(g); g.connect(a.destination); o.frequency.value = f;
+        g.gain.setValueAtTime(0.1, a.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.01, a.currentTime + 0.4);
+        o.start(); o.stop(a.currentTime + 0.4);
+      }, i * 120));
 
       let cv = document.getElementById('v'), ctx = cv.getContext('2d');
-      cv.width = document.innerWidth; cv.height = window.innerHeight;
+      cv.width = window.innerWidth; cv.height = window.innerHeight;
       let p = [];
       for(let i = 0; i < 150; i++) {
-        p.push({
-          x: cv.width / 2, 
-          y: cv.height / 2, 
-          dx: (Math.random() - 0.5) * 14, 
-          dy: (Math.random() - 0.5) * 15 - 6, 
-          c: `hsl(${Math.random() * 360}, 90%, 60%)`
-        });
+        p.push([cv.width/2,cv.height/2,(Math.random()-0.5)*14,(Math.random()-0.5)*15-6,`hsl(${Math.random()*360},90%,60%)`]);
       }
 
       function loop() {
         ctx.clearRect(0,0,cv.width, cv.height);
         p.forEach(i => {
-          i.x += i.dx; i.y += i.dy; i.dy + 0.2;
-          ctx.fillStyle = i.c; ctx.fillRect(i.x, i.y, 6, 6);
+          i[0] += i[2]; i[1] += i[3]; i[3] += 0.2;
+          ctx.fillStyle = i[4]; ctx.fillRect(i[0], i[1], 6, 6);
         });
         requestAnimationFrame(loop);
       }
       loop();
-      setTimeout(() => alert('you win. yay.'), 300);
+      setTimeout(() => alert('you win. yay.'), 1800);
     }
   </script>
 </body>
